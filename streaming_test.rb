@@ -14,7 +14,7 @@ class StreamingTest < Sinatra::Base
             window.onload = function() {
               var bodyElement = document.getElementsByTagName('body')[0];
               var scrollToBottom = false;
-          
+
               var streamContainer = document.getElementById("stream-container");
               streamContainer.innerHtml = "";
 
@@ -26,7 +26,7 @@ class StreamingTest < Sinatra::Base
                 scrollToBottom = false
 
                 if(xhr.readyState > 2) {
-                  var newData = xhr.responseText.substr(xhr.seenBytes);                  
+                  var newData = xhr.responseText.substr(xhr.seenBytes);
                   var newTextNode = document.createTextNode(newData);
 
                   if(bodyElement.offsetHeight <= window.scrollY + bodyElement.clientHeight) {
@@ -35,7 +35,7 @@ class StreamingTest < Sinatra::Base
 
                   streamContainer.appendChild(newTextNode);
 
-                  if(scrollToBottom) { 
+                  if(scrollToBottom) {
                     window.scrollTo(0, bodyElement.scrollHeight)
                   }
 
@@ -45,12 +45,10 @@ class StreamingTest < Sinatra::Base
 
               xhr.onloadend = function() {
                 streamContainer.appendChild(document.createTextNode('..finished streaming.'));
-                if(scrollToBottom) { 
+                if(scrollToBottom) {
                   window.scrollTo(0, bodyElement.scrollHeight)
                 }
-
               };
-
               xhr.send();
             }
           </script>
@@ -64,8 +62,12 @@ class StreamingTest < Sinatra::Base
   end
 
   get '/stream' do
-    content_type 'text/event-stream'
+    content_type 'application/octet-stream'
     stream do |out|
+      # really close client connection
+      out.callback { http.conn.close_connection }
+      out.errback { http.conn.close_connection }
+
       150.times do
         break if out.closed?
         out << "#{Time.now.utc}\n"
